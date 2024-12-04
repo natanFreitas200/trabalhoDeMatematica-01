@@ -1,4 +1,4 @@
-from script import PLSolver, branch_and_bound
+from script import Branch_and_Bound
 
 
 # Função para ler os dados de um arquivo e resolver o problema
@@ -27,7 +27,7 @@ def ler(arqu):
         b.append(value)
 
     # Resolver o problema usando Branch-and-Bound
-    valor_maximo, solucao_maxima = branch_and_bound(c, A, b)
+    valor_maximo, solucao_maxima = Branch_and_Bound(c, A, b)
 
     # Imprimir a solução final
     print("\nSolução final:")
