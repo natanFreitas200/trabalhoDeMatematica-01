@@ -2,19 +2,6 @@ from ortools.linear_solver import pywraplp
 import math
 
 
-def verif_inteiro(solucao):
-    """
-    Verifica se todos os valores da solução são inteiros.
-
-    Parâmetros:
-        solucao (list): Vetor solução.
-
-    Retorna:
-        bool: True se todos os valores forem inteiros, False caso contrário.
-    """
-    return all(abs(valor - round(valor)) < 1e-6 for valor in solucao)
-
-
 # Função para resolver problemas de programação linear contínua (PL)
 def PLSolver(c, A, b):
     """
@@ -52,11 +39,14 @@ def PLSolver(c, A, b):
     # Verificar se a solução é ótima e retornar resultados
     if status == pywraplp.Solver.OPTIMAL:
         fmax = solver.Objective().Value()  # Valor da função objetivo
-        xmax = [variaveis[i].solution_value() for i in range(n)]  # Solução encontrada
+        xmax = []  # Inicializar a lista de soluções
+        for i in range(n):
+            xmax.append(variaveis[i].solution_value())  # Adicionar valor da variável à lista
         return fmax, xmax
     else:
         # Retornar None caso a solução não seja encontrada
         return None, None
+
 
 
 # Função para resolver problemas de programação inteira usando Branch-and-Bound
@@ -95,7 +85,14 @@ def branch_and_bound(c, A, b):
         print(f"Função Objetivo: {valor_maximo}")
         print(f"Solução: {solucao_maxima}")
 
-        if verif_inteiro(solucao_maxima):
+        # Verificar se a solução é inteira
+        inteiro = True
+        for valor in solucao_maxima:
+            if abs(valor - round(valor)) >= 1e-6:
+                inteiro = False
+                break
+
+        if inteiro:
             # Se a solução é inteira, verificar se é melhor que a solução atual
             if valor_maximo > melhor_valor:
                 melhor_valor = valor_maximo
@@ -107,15 +104,34 @@ def branch_and_bound(c, A, b):
         else:
             # Divisão (branching) para gerar novos subproblemas
             for i in range(len(solucao_maxima)):
-                if abs(solucao_maxima[i] - round(solucao_maxima[i])) > 1e-6:
-                    # Criar dois subproblemas: xi <= floor(xi) e xi >= ceil(xi)
-                    A1 = A + [[1 if j == i else 0 for j in range(len(c))]]
-                    b1 = b + [math.floor(solucao_maxima[i])]
-                    subproblemas.append({"id": f"{id_prob}L", "c": c, "A": A1, "b": b1})
+                valor_atual = solucao_maxima[i]
+                if abs(valor_atual - round(valor_atual)) > 1e-6:
+                    # Criar subproblema da esquerda
+                    A1 = A.copy()  # Copia a matriz A original
+                    nova_restricao1 = []
+                    for j in range(len(c)):
+                        if j == i:
+                            nova_restricao1.append(1)  # Se j é o índice atual, adiciona 1
+                        else:
+                            nova_restricao1.append(0)  # Caso contrário, adiciona 0
+                    A1.append(nova_restricao1)  # Adiciona nova restrição à matriz A1
+                    b1 = b.copy()  # Copia o vetor b original
+                    b1.append(math.floor(valor_atual))  # Adiciona o limite da nova restrição
+                    subproblemas.append({"id": f"{id_prob} Esquerda", "c": c, "A": A1, "b": b1})
 
-                    A2 = A + [[-1 if j == i else 0 for j in range(len(c))]]
-                    b2 = b + [-math.ceil(solucao_maxima[i])]
-                    subproblemas.append({"id": f"{id_prob}R", "c": c, "A": A2, "b": b2})
+                    # Criar subproblema da direita
+                    A2 = A.copy()  # Copia a matriz A original
+                    nova_restricao2 = []
+                    for j in range(len(c)):
+                        if j == i:
+                            nova_restricao2.append(-1)  # Se j é o índice atual, adiciona -1
+                        else:
+                            nova_restricao2.append(0)  # Caso contrário, adiciona 0
+                    A2.append(nova_restricao2)  # Adiciona nova restrição à matriz A2
+                    b2 = b.copy()  # Copia o vetor b original
+                    b2.append(-math.ceil(valor_atual))  # Adiciona o limite da nova restrição
+                    subproblemas.append({"id": f"{id_prob} Direita", "c": c, "A": A2, "b": b2})
+
                     break  # Divide apenas no primeiro valor fracionário encontrado
 
     # Print da solução final
@@ -125,39 +141,6 @@ def branch_and_bound(c, A, b):
     return melhor_valor, melhor_solucao
 
 
-# Função para ler os dados de um arquivo e resolver o problema
-def ler(arqu):
-    """
-    Lê os dados do arquivo de entrada e resolve o problema utilizando Branch-and-Bound.
-
-    Parâmetros:
-        arqu (str): Caminho do arquivo de entrada.
-    """
-    with open(arqu, 'r') as arquivo:
-        linhas = arquivo.readlines()
-
-    # Ler o número de variáveis (n) e restrições (m)
-    n, m = map(int, linhas[0].split())
-
-    # Ler os coeficientes da função objetivo
-    c = list(map(float, linhas[1].split()))
-
-    # Ler as restrições (matriz A e vetor b)
-    A = []
-    b = []
-    for i in range(2, 2 + m):
-        *a, bi = map(float, linhas[i].split())
-        A.append(a)
-        b.append(bi)
-
-    # Resolver o problema usando Branch-and-Bound
-    valor_maximo, solucao_maxima = branch_and_bound(c, A, b)
-
-    # Imprimir a solução final
-    print("\nSolução final:")
-    print(f"Função Objetivo: {valor_maximo}")
-    print(f"Solução: {solucao_maxima}")
 
 
-# Chamada principal para resolver o problema a partir do arquivo LP.txt
-ler("LP.txt")
+
