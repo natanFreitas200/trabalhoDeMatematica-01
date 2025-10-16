@@ -72,5 +72,4 @@ Contribuições
 - Adicione testes automatizados e casos de benchmark.
 - Otimize a estratégia de branching (por exemplo, escolher a variável com maior frac part ou usar limites heurísticos).
 
-Licença
-- Este repositório pode ser usado livremente para fins educacionais. Coloque aqui a licença desejada (ex.: MIT) se quiser compartilhar publicamente.
+
